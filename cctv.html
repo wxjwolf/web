@@ -1,14 +1,305 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>CCTV API</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCTV直播播放器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .description {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+        
+        .control-panel {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
+        select, button {
+            width: 100%;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: rgba(255,255,255,0.9);
+            color: #333;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        select:hover, button:hover {
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        button {
+            background: #ff6b6b;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
+        button:hover {
+            background: #ff5252;
+        }
+        
+        .quality-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .quality-btn {
+            flex: 1;
+            padding: 10px;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .quality-btn.active {
+            background: #4CAF50;
+            border-color: #4CAF50;
+        }
+        
+        .quality-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .video-container {
+            background: rgba(0,0,0,0.8);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        video {
+            width: 100%;
+            max-width: 800px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        
+        .status {
+            text-align: center;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 4px solid white;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .channel-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .channel-btn {
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .channel-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+        
+        .channel-btn.active {
+            background: #2196F3;
+            border-color: #2196F3;
+        }
+        
+        .error {
+            background: rgba(244, 67, 54, 0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            text-align: center;
+        }
+        
+        .success {
+            background: rgba(76, 175, 80, 0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .channel-list {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+            
+            .quality-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📺 CCTV直播播放器</h1>
+            <p class="description">选择频道和画质开始观看直播</p>
+        </header>
+        
+        <div class="control-panel">
+            <div class="form-group">
+                <label for="channel">选择频道:</label>
+                <select id="channel">
+                    <option value="cctv1">CCTV-1 综合</option>
+                    <option value="cctv2">CCTV-2 财经</option>
+                    <option value="cctv4">CCTV-4 中文国际</option>
+                    <option value="cctv7">CCTV-7 国防军事</option>
+                    <option value="cctv9">CCTV-9 纪录</option>
+                    <option value="cctv10">CCTV-10 科教</option>
+                    <option value="cctv12">CCTV-12 社会与法</option>
+                    <option value="cctv13">CCTV-13 新闻</option>
+                    <option value="cctv17">CCTV-17 农业农村</option>
+                    <option value="cctv4k">CCTV-4K 超高清</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>选择画质:</label>
+                <div class="quality-buttons">
+                    <button class="quality-btn active" data-quality="lg">蓝光 (1080P)</button>
+                    <button class="quality-btn" data-quality="cq">超清 (720P)</button>
+                    <button class="quality-btn" data-quality="gq">高清 (540P)</button>
+                </div>
+            </div>
+            
+            <button id="playBtn">🎬 开始播放</button>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>正在获取直播流，请稍候...</p>
+        </div>
+        
+        <div class="status" id="status"></div>
+        
+        <div class="video-container">
+            <video id="videoPlayer" controls muted playsinline>
+                您的浏览器不支持视频播放
+            </video>
+        </div>
+        
+        <div class="channel-list">
+            <div class="channel-btn active" data-channel="cctv1">CCTV-1</div>
+            <div class="channel-btn" data-channel="cctv2">CCTV-2</div>
+            <div class="channel-btn" data-channel="cctv4">CCTV-4</div>
+            <div class="channel-btn" data-channel="cctv7">CCTV-7</div>
+            <div class="channel-btn" data-channel="cctv9">CCTV-9</div>
+            <div class="channel-btn" data-channel="cctv10">CCTV-10</div>
+            <div class="channel-btn" data-channel="cctv12">CCTV-12</div>
+            <div class="channel-btn" data-channel="cctv13">CCTV-13</div>
+            <div class="channel-btn" data-channel="cctv17">CCTV-17</div>
+            <div class="channel-btn" data-channel="cctv4k">CCTV-4K</div>
+        </div>
+    </div>
+
     <script>
         // 频道映射
         const channelMap = {
             'cctv1': '11200132825562653886',
-            'cctv2': '12030532124776958103',
-            'cctv4': '10620168294224708952', 
+            'cctv2': '12030532124776958103', 
+            'cctv4': '10620168294224708952',
             'cctv7': '8516529981177953694',
             'cctv9': '7252237247689203957',
             'cctv10': '14589146016461298119',
@@ -18,108 +309,194 @@
             'cctv4k': '2127841942201075403'
         };
 
-        async function handleRequest() {
+        let currentQuality = 'lg';
+        let currentChannel = 'cctv1';
+
+        // 初始化事件监听
+        document.addEventListener('DOMContentLoaded', function() {
+            // 画质按钮事件
+            document.querySelectorAll('.quality-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.quality-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentQuality = this.dataset.quality;
+                });
+            });
+
+            // 频道按钮事件
+            document.querySelectorAll('.channel-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.channel-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentChannel = this.dataset.channel;
+                    document.getElementById('channel').value = currentChannel;
+                });
+            });
+
+            // 频道选择框事件
+            document.getElementById('channel').addEventListener('change', function() {
+                currentChannel = this.value;
+                document.querySelectorAll('.channel-btn').forEach(b => {
+                    b.classList.remove('active');
+                    if (b.dataset.channel === currentChannel) {
+                        b.classList.add('active');
+                    }
+                });
+            });
+
+            // 播放按钮事件
+            document.getElementById('playBtn').addEventListener('click', playLive);
+            
+            // 检查URL参数
             const urlParams = new URLSearchParams(window.location.search);
-            const id = urlParams.get('id') || 'cctv1';
-            const q = urlParams.get('q') || 'lg';
-            const format = urlParams.get('format') || 'redirect';
+            const urlId = urlParams.get('id');
+            const urlQ = urlParams.get('q');
+            
+            if (urlId && channelMap[urlId]) {
+                currentChannel = urlId;
+                document.getElementById('channel').value = currentChannel;
+                document.querySelectorAll('.channel-btn').forEach(b => {
+                    b.classList.remove('active');
+                    if (b.dataset.channel === currentChannel) {
+                        b.classList.add('active');
+                    }
+                });
+            }
+            
+            if (urlQ && ['lg', 'cq', 'gq'].includes(urlQ)) {
+                currentQuality = urlQ;
+                document.querySelectorAll('.quality-btn').forEach(b => {
+                    b.classList.remove('active');
+                    if (b.dataset.quality === currentQuality) {
+                        b.classList.add('active');
+                    }
+                });
+            }
+            
+            // 如果有URL参数，自动播放
+            if (urlId || urlQ) {
+                setTimeout(playLive, 500);
+            }
+        });
+
+        async function playLive() {
+            const loading = document.getElementById('loading');
+            const status = document.getElementById('status');
+            const video = document.getElementById('videoPlayer');
+            
+            loading.style.display = 'block';
+            status.textContent = '正在获取直播地址...';
+            status.className = 'status';
+            video.style.display = 'none';
 
             try {
-                const articleId = channelMap[id];
+                const articleId = channelMap[currentChannel];
                 if (!articleId) {
-                    throw new Error('频道不存在');
+                    throw new Error('不支持的频道');
                 }
 
-                const t = Math.floor(Date.now() / 1000);
-                const sail = await md5(`articleId=${articleId}&scene_type=6`);
-                const w = `&&&20000009&${sail}&${t}&emas.feed.article.live.detail&1.0.0&&&&&`;
-                const k = "emasgatewayh5";
-                const sign = await hmacSHA256(w, k);
-                const clientId = await md5(t.toString());
+                // 更新URL参数
+                const newUrl = `${window.location.pathname}?id=${currentChannel}&q=${currentQuality}`;
+                window.history.replaceState(null, '', newUrl);
+                
+                // 使用代理API获取直播地址
+                status.textContent = '请求直播数据...';
+                
+                // 这里使用一个代理API来获取直播地址
+                // 在实际部署时，您可能需要设置自己的代理服务器
+                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://your-proxy-server.com/cctv-proxy?id=${currentChannel}&q=${currentQuality}`)}`;
+                
+                const response = await fetch(proxyUrl);
+                
+                if (!response.ok) {
+                    throw new Error(`网络请求失败: ${response.status}`);
+                }
 
-                const headers = {
-                    'cookieuid': clientId,
-                    'from-client': 'h5',
-                    'referer': 'https://m-live.cctvnews.cctv.com/',
-                    'x-emas-gw-appkey': '20000009',
-                    'x-emas-gw-pv': '6.1',
-                    'x-emas-gw-sign': sign,
-                    'x-emas-gw-t': t.toString(),
-                    'x-req-ts': (t * 1000).toString()
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || '获取直播地址失败');
+                }
+
+                // 播放视频
+                status.textContent = '准备播放...';
+                status.className = 'status success';
+                video.src = data.url;
+                video.style.display = 'block';
+                
+                video.onloadeddata = function() {
+                    loading.style.display = 'none';
+                    status.textContent = `正在播放: ${currentChannel.toUpperCase()} - ${getQualityText(currentQuality)}`;
+                    video.play().catch(e => {
+                        status.textContent = '自动播放被阻止，请手动点击播放';
+                    });
                 };
 
-                const apiUrl = `https://emas-api.cctvnews.cctv.com/h5/emas.feed.article.live.detail/1.0.0?articleId=${articleId}&scene_type=6`;
-                const response = await fetch(apiUrl, { headers });
-                
-                if (!response.ok) throw new Error('API请求失败');
-                
-                const data = await response.json();
-                const decodedData = JSON.parse(atob(data.response)).data;
-
-                let authUrl;
-                const liveData = decodedData.live_room.liveCameraList[0].pullUrlList[0].authResultUrl[0];
-                
-                if (q === 'lg') authUrl = liveData.authUrl;
-                else if (q === 'cq') authUrl = liveData.demote_urls[1].authUrl;
-                else if (q === 'gq') authUrl = liveData.demote_urls[0].authUrl;
-                else throw new Error('画质参数错误');
-
-                const dk = decodedData.dk;
-                const key = dk.substring(0, 8) + t.toString().slice(-8);
-                const iv = dk.substring(dk.length - 8) + t.toString().substring(0, 8);
-                
-                const liveUrl = await decryptAES(authUrl, key, iv);
-
-                if (format === 'json') {
-                    document.body.innerHTML = JSON.stringify({
-                        success: true,
-                        channel: id,
-                        quality: q,
-                        url: liveUrl
-                    }, null, 2);
-                } else {
-                    window.location.href = liveUrl;
-                }
+                video.onerror = function() {
+                    loading.style.display = 'none';
+                    status.textContent = '视频加载失败，请重试';
+                    status.className = 'status error';
+                };
 
             } catch (error) {
-                document.body.innerHTML = JSON.stringify({
-                    success: false,
-                    error: error.message
-                }, null, 2);
+                console.error('播放错误:', error);
+                loading.style.display = 'none';
+                status.textContent = `错误: ${error.message}`;
+                status.className = 'status error';
+                
+                // 显示备用播放方案
+                showFallbackOptions();
             }
         }
 
-        // 工具函数
-        async function md5(str) {
-            const encoder = new TextEncoder();
-            const data = encoder.encode(str);
-            const hash = await crypto.subtle.digest('MD5', data);
-            return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+        function showFallbackOptions() {
+            const status = document.getElementById('status');
+            status.innerHTML += `<br><br>
+            <div style="margin-top: 10px;">
+                <p>如果无法播放，请尝试以下方法：</p>
+                <button onclick="useDirectStream()" style="margin: 5px; padding: 8px 15px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                    使用备用直播源
+                </button>
+                <button onclick="window.open('https://tv.cctv.com/live/${currentChannel}/')" style="margin: 5px; padding: 8px 15px; background: #2196F3; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                    前往CCTV官网观看
+                </button>
+            </div>`;
         }
 
-        async function hmacSHA256(message, key) {
-            const encoder = new TextEncoder();
-            const keyData = encoder.encode(key);
-            const messageData = encoder.encode(message);
-            const cryptoKey = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-            const signature = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
-            return Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('');
+        function useDirectStream() {
+            // 使用备用直播源
+            const video = document.getElementById('videoPlayer');
+            const status = document.getElementById('status');
+            
+            // 这里可以添加一些公开的CCTV直播源
+            const backupStreams = {
+                'cctv1': 'https://cctvcnch5.v.wscdns.com/live/cctv1_2/index.m3u8',
+                'cctv2': 'https://cctvcnch5.v.wscdns.com/live/cctv2_2/index.m3u8',
+                'cctv4': 'https://cctvcnch5.v.wscdns.com/live/cctv4_2/index.m3u8',
+                // 可以添加更多备用源
+            };
+            
+            if (backupStreams[currentChannel]) {
+                status.textContent = '正在使用备用直播源...';
+                video.src = backupStreams[currentChannel];
+                video.style.display = 'block';
+                video.play().catch(e => {
+                    status.textContent = '请手动点击播放按钮';
+                });
+            } else {
+                status.textContent = '该频道暂无备用直播源';
+                status.className = 'status error';
+            }
         }
 
-        async function decryptAES(encryptedData, key, iv) {
-            const encryptedBytes = Uint8Array.from(atob(encryptedData), c => c.charCodeAt(0));
-            const keyBytes = new TextEncoder().encode(key);
-            const ivBytes = new TextEncoder().encode(iv);
-            const cryptoKey = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-CBC' }, false, ['decrypt']);
-            const decrypted = await crypto.subtle.decrypt({ name: 'AES-CBC', iv: ivBytes }, cryptoKey, encryptedBytes);
-            return new TextDecoder().decode(decrypted);
+        function getQualityText(quality) {
+            const qualityMap = {
+                'lg': '蓝光 (1080P)',
+                'cq': '超清 (720P)', 
+                'gq': '高清 (540P)'
+            };
+            return qualityMap[quality] || quality;
         }
-
-        // 页面加载时处理请求
-        window.addEventListener('DOMContentLoaded', handleRequest);
     </script>
-</head>
-<body>
-    <p>处理中...</p>
 </body>
 </html>
