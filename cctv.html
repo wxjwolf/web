@@ -193,7 +193,7 @@
             margin-top: 20px;
             font-family: monospace;
             font-size: 0.8rem;
-            max-height: 200px;
+            max-height: 300px;
             overflow-y: auto;
             display: none;
         }
@@ -233,7 +233,7 @@
             </div>
             
             <button id="getStreamBtn">🚀 获取直播流</button>
-            <button id="debugBtn" style="background: #666; margin-top: 5px;">🐛 调试信息</button>
+            <button id="debugBtn" style="background: #666; margin-top: 5px;">🐛 显示调试信息</button>
         </div>
         
         <div class="loading" id="loading">
@@ -392,48 +392,100 @@
 
                 status.textContent = '请求API数据...';
                 addDebugInfo(`请求URL: https://emas-api.cctvnews.cctv.com/h5/emas.feed.article.live.detail/1.0.0?articleId=${articleId}&scene_type=6`);
+                addDebugInfo(`请求头: ${JSON.stringify(headers, null, 2)}`);
 
                 // 获取直播数据
                 const apiUrl = `https://emas-api.cctvnews.cctv.com/h5/emas.feed.article.live.detail/1.0.0?articleId=${articleId}&scene_type=6`;
                 const response = await fetch(apiUrl, { headers });
                 
                 if (!response.ok) {
-                    throw new Error(`API请求失败: ${response.status}`);
+                    throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
                 }
 
                 const data = await response.json();
-                addDebugInfo(`API响应: ${JSON.stringify(data).substring(0, 500)}...`);
+                addDebugInfo(`API响应状态: ${data.success}`);
+                addDebugInfo(`响应数据结构: ${Object.keys(data).join(', ')}`);
 
-                // 解码响应数据
-                const decodedResponse = atob(data.response);
-                const responseData = JSON.parse(decodedResponse);
-                const liveData = responseData.data;
+                // 检查响应数据格式
+                if (!data.response) {
+                    throw new Error('API响应格式错误：缺少response字段');
+                }
+
+                // 尝试解码响应数据
+                let decodedResponse;
+                try {
+                    // 先尝试直接解析JSON（可能不是Base64）
+                    decodedResponse = data.response;
+                    try {
+                        // 如果是JSON字符串，直接解析
+                        const parsed = JSON.parse(decodedResponse);
+                        addDebugInfo('响应数据是JSON格式，直接解析');
+                        decodedResponse = parsed;
+                    } catch (jsonError) {
+                        // 如果不是JSON，尝试Base64解码
+                        addDebugInfo('响应数据不是JSON，尝试Base64解码');
+                        decodedResponse = atob(data.response);
+                        decodedResponse = JSON.parse(decodedResponse);
+                    }
+                } catch (decodeError) {
+                    addDebugInfo(`解码失败: ${decodeError.message}`);
+                    // 如果解码失败，直接使用原始数据
+                    decodedResponse = data;
+                }
+
+                addDebugInfo(`解码后的响应类型: ${typeof decodedResponse}`);
+                
+                // 获取直播数据
+                const liveData = decodedResponse.data || decodedResponse;
+                if (!liveData) {
+                    throw new Error('无法获取直播数据');
+                }
+
+                addDebugInfo(`直播数据结构: ${JSON.stringify(liveData, null, 2).substring(0, 500)}...`);
 
                 // 获取对应画质的URL
                 let authUrl;
-                const authResult = liveData.live_room.liveCameraList[0].pullUrlList[0].authResultUrl[0];
-                
-                if (currentQuality === 'lg') {
-                    authUrl = authResult.authUrl;
-                } else if (currentQuality === 'cq') {
-                    authUrl = authResult.demote_urls[1].authUrl;
-                } else if (currentQuality === 'gq') {
-                    authUrl = authResult.demote_urls[0].authUrl;
-                } else {
-                    throw new Error('不支持的画质参数');
-                }
+                try {
+                    const authResult = liveData.live_room.liveCameraList[0].pullUrlList[0].authResultUrl[0];
+                    
+                    if (currentQuality === 'lg') {
+                        authUrl = authResult.authUrl;
+                    } else if (currentQuality === 'cq') {
+                        authUrl = authResult.demote_urls[1].authUrl;
+                    } else if (currentQuality === 'gq') {
+                        authUrl = authResult.demote_urls[0].authUrl;
+                    } else {
+                        throw new Error('不支持的画质参数');
+                    }
 
-                addDebugInfo(`加密URL: ${authUrl.substring(0, 100)}...`);
+                    if (!authUrl) {
+                        throw new Error('无法获取加密URL');
+                    }
+
+                    addDebugInfo(`加密URL: ${authUrl.substring(0, 100)}...`);
+                } catch (urlError) {
+                    throw new Error(`获取加密URL失败: ${urlError.message}`);
+                }
 
                 // 解密URL
                 const dk = liveData.dk;
+                if (!dk) {
+                    throw new Error('缺少解密密钥dk');
+                }
+
                 const key = dk.substring(0, 8) + t.toString().slice(-8);
                 const iv = dk.substring(dk.length - 8) + t.toString().substring(0, 8);
                 
                 status.textContent = '解密直播地址...';
+                addDebugInfo(`解密参数 - key: ${key}, iv: ${iv}`);
+                
                 const liveUrl = await decryptAES(authUrl, key, iv);
 
                 addDebugInfo(`解密后的URL: ${liveUrl}`);
+
+                if (!liveUrl || !liveUrl.startsWith('http')) {
+                    throw new Error('解密后的URL格式不正确');
+                }
 
                 // 显示URL并播放视频
                 document.getElementById('streamUrl').textContent = liveUrl;
@@ -456,6 +508,7 @@
                     loading.style.display = 'none';
                     status.textContent = '视频加载失败，请检查URL或网络连接';
                     status.className = 'status error';
+                    addDebugInfo('视频加载错误');
                 };
 
             } catch (error) {
@@ -463,7 +516,7 @@
                 loading.style.display = 'none';
                 status.textContent = `错误: ${error.message}`;
                 status.className = 'status error';
-                addDebugInfo(`错误: ${error.message}`);
+                addDebugInfo(`错误详情: ${error.stack}`);
             } finally {
                 getStreamBtn.disabled = false;
             }
@@ -528,7 +581,7 @@
             const debugInfo = document.getElementById('debugInfo');
             debugMode = !debugMode;
             debugInfo.style.display = debugMode ? 'block' : 'none';
-            document.getElementById('debugBtn').textContent = debugMode ? '🐛 隐藏调试' : '🐛 调试信息';
+            document.getElementById('debugBtn').textContent = debugMode ? '🐛 隐藏调试' : '🐛 显示调试信息';
         }
 
         function addDebugInfo(message) {
@@ -537,6 +590,15 @@
                 const timestamp = new Date().toLocaleTimeString();
                 debugInfo.innerHTML += `[${timestamp}] ${message}<br>`;
                 debugInfo.scrollTop = debugInfo.scrollHeight;
+            }
+        }
+
+        // Base64验证函数
+        function isValidBase64(str) {
+            try {
+                return btoa(atob(str)) === str;
+            } catch (e) {
+                return false;
             }
         }
     </script>
