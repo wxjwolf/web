@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CCTV直播播放器</title>
+    <title>CCTV直播API</title>
     <style>
         * {
             margin: 0;
@@ -30,29 +30,34 @@
             padding: 20px;
             background: rgba(0, 0, 0, 0.3);
             border-radius: 15px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         h1 {
             font-size: 2.5rem;
             margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
         
-        .description {
-            font-size: 1.1rem;
-            opacity: 0.9;
+        .api-info {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 20px;
             margin-bottom: 20px;
+        }
+        
+        .api-url {
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            word-break: break-all;
         }
         
         .control-panel {
             background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
             border-radius: 15px;
             padding: 25px;
             margin-bottom: 30px;
-            border: 1px solid rgba(255,255,255,0.2);
         }
         
         .form-group {
@@ -63,7 +68,6 @@
             display: block;
             margin-bottom: 8px;
             font-weight: bold;
-            font-size: 1.1rem;
         }
         
         select, button {
@@ -75,24 +79,12 @@
             background: rgba(255,255,255,0.9);
             color: #333;
             cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        select:hover, button:hover {
-            background: white;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
         
         button {
             background: #ff6b6b;
             color: white;
             font-weight: bold;
-            font-size: 1.1rem;
-        }
-        
-        button:hover {
-            background: #ff5252;
         }
         
         .quality-buttons {
@@ -109,7 +101,6 @@
             border-radius: 6px;
             color: white;
             cursor: pointer;
-            transition: all 0.3s ease;
             text-align: center;
         }
         
@@ -118,27 +109,18 @@
             border-color: #4CAF50;
         }
         
-        .quality-btn:hover {
-            background: rgba(255,255,255,0.3);
-        }
-        
         .video-container {
             background: rgba(0,0,0,0.8);
             border-radius: 15px;
             padding: 20px;
             margin-bottom: 20px;
             text-align: center;
-            min-height: 400px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
         
         video {
             width: 100%;
             max-width: 800px;
             border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
         
         .status {
@@ -147,6 +129,14 @@
             margin: 10px 0;
             border-radius: 8px;
             background: rgba(255,255,255,0.1);
+        }
+        
+        .error {
+            background: rgba(244, 67, 54, 0.8);
+        }
+        
+        .success {
+            background: rgba(76, 175, 80, 0.8);
         }
         
         .loading {
@@ -172,25 +162,19 @@
         
         .channel-list {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
             margin-top: 20px;
         }
         
         .channel-btn {
-            padding: 15px;
+            padding: 12px;
             background: rgba(255,255,255,0.1);
             border: 1px solid rgba(255,255,255,0.2);
             border-radius: 8px;
             color: white;
             cursor: pointer;
-            transition: all 0.3s ease;
             text-align: center;
-        }
-        
-        .channel-btn:hover {
-            background: rgba(255,255,255,0.2);
-            transform: translateY(-2px);
         }
         
         .channel-btn.active {
@@ -198,45 +182,31 @@
             border-color: #2196F3;
         }
         
-        .error {
-            background: rgba(244, 67, 54, 0.8);
-            color: white;
-            padding: 15px;
+        .json-output {
+            background: rgba(0,0,0,0.7);
             border-radius: 8px;
-            margin: 10px 0;
-            text-align: center;
-        }
-        
-        .success {
-            background: rgba(76, 175, 80, 0.8);
-            color: white;
             padding: 15px;
-            border-radius: 8px;
-            margin: 10px 0;
-            text-align: center;
-        }
-        
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 2rem;
-            }
-            
-            .channel-list {
-                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            }
-            
-            .quality-buttons {
-                flex-direction: column;
-            }
+            margin-top: 20px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 300px;
+            overflow-y: auto;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>📺 CCTV直播播放器</h1>
-            <p class="description">选择频道和画质开始观看直播</p>
+            <h1>📺 CCTV直播API</h1>
+            <p>静态页面调用CCTV直播流</p>
         </header>
+        
+        <div class="api-info">
+            <h3>API调用方式：</h3>
+            <div class="api-url" id="apiUrl">正在生成URL...</div>
+            <p>支持参数：id=频道ID, q=画质(lg/蓝光, cq/超清, gq/高清)</p>
+        </div>
         
         <div class="control-panel">
             <div class="form-group">
@@ -258,26 +228,31 @@
             <div class="form-group">
                 <label>选择画质:</label>
                 <div class="quality-buttons">
-                    <button class="quality-btn active" data-quality="lg">蓝光 (1080P)</button>
-                    <button class="quality-btn" data-quality="cq">超清 (720P)</button>
-                    <button class="quality-btn" data-quality="gq">高清 (540P)</button>
+                    <button class="quality-btn active" data-quality="lg">蓝光</button>
+                    <button class="quality-btn" data-quality="cq">超清</button>
+                    <button class="quality-btn" data-quality="gq">高清</button>
                 </div>
             </div>
             
-            <button id="playBtn">🎬 开始播放</button>
+            <button id="playBtn">🎬 获取直播流</button>
+            <button id="jsonBtn" style="background: #2196F3; margin-top: 10px;">📋 获取JSON数据</button>
         </div>
         
         <div class="loading" id="loading">
             <div class="spinner"></div>
-            <p>正在获取直播流，请稍候...</p>
+            <p>正在获取直播流...</p>
         </div>
         
-        <div class="status" id="status"></div>
+        <div class="status" id="status">等待操作...</div>
         
         <div class="video-container">
             <video id="videoPlayer" controls muted playsinline>
-                您的浏览器不支持视频播放
+                视频加载后将显示在这里
             </video>
+        </div>
+        
+        <div class="json-output" id="jsonOutput" style="display: none;">
+            {/* JSON数据将显示在这里 */}
         </div>
         
         <div class="channel-list">
@@ -312,40 +287,41 @@
         let currentQuality = 'lg';
         let currentChannel = 'cctv1';
 
-        // 初始化事件监听
+        // 初始化
         document.addEventListener('DOMContentLoaded', function() {
-            // 画质按钮事件
+            updateApiUrl();
+            
+            // 事件监听
             document.querySelectorAll('.quality-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     document.querySelectorAll('.quality-btn').forEach(b => b.classList.remove('active'));
                     this.classList.add('active');
                     currentQuality = this.dataset.quality;
+                    updateApiUrl();
                 });
             });
 
-            // 频道按钮事件
             document.querySelectorAll('.channel-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     document.querySelectorAll('.channel-btn').forEach(b => b.classList.remove('active'));
                     this.classList.add('active');
                     currentChannel = this.dataset.channel;
                     document.getElementById('channel').value = currentChannel;
+                    updateApiUrl();
                 });
             });
 
-            // 频道选择框事件
             document.getElementById('channel').addEventListener('change', function() {
                 currentChannel = this.value;
                 document.querySelectorAll('.channel-btn').forEach(b => {
                     b.classList.remove('active');
-                    if (b.dataset.channel === currentChannel) {
-                        b.classList.add('active');
-                    }
+                    if (b.dataset.channel === currentChannel) b.classList.add('active');
                 });
+                updateApiUrl();
             });
 
-            // 播放按钮事件
-            document.getElementById('playBtn').addEventListener('click', playLive);
+            document.getElementById('playBtn').addEventListener('click', getLiveStream);
+            document.getElementById('jsonBtn').addEventListener('click', getJsonData);
             
             // 检查URL参数
             const urlParams = new URLSearchParams(window.location.search);
@@ -357,9 +333,7 @@
                 document.getElementById('channel').value = currentChannel;
                 document.querySelectorAll('.channel-btn').forEach(b => {
                     b.classList.remove('active');
-                    if (b.dataset.channel === currentChannel) {
-                        b.classList.add('active');
-                    }
+                    if (b.dataset.channel === currentChannel) b.classList.add('active');
                 });
             }
             
@@ -367,135 +341,167 @@
                 currentQuality = urlQ;
                 document.querySelectorAll('.quality-btn').forEach(b => {
                     b.classList.remove('active');
-                    if (b.dataset.quality === currentQuality) {
-                        b.classList.add('active');
-                    }
+                    if (b.dataset.quality === currentQuality) b.classList.add('active');
                 });
             }
             
-            // 如果有URL参数，自动播放
+            updateApiUrl();
+            
+            // 如果有URL参数，自动获取
             if (urlId || urlQ) {
-                setTimeout(playLive, 500);
+                setTimeout(getLiveStream, 1000);
             }
         });
 
-        async function playLive() {
+        function updateApiUrl() {
+            const apiUrl = `${window.location.origin}${window.location.pathname}?id=${currentChannel}&q=${currentQuality}`;
+            document.getElementById('apiUrl').textContent = apiUrl;
+        }
+
+        async function getLiveStream() {
             const loading = document.getElementById('loading');
             const status = document.getElementById('status');
             const video = document.getElementById('videoPlayer');
+            const jsonOutput = document.getElementById('jsonOutput');
             
             loading.style.display = 'block';
-            status.textContent = '正在获取直播地址...';
+            status.textContent = '正在获取直播流...';
             status.className = 'status';
             video.style.display = 'none';
+            jsonOutput.style.display = 'none';
 
             try {
-                const articleId = channelMap[currentChannel];
-                if (!articleId) {
-                    throw new Error('不支持的频道');
-                }
-
-                // 更新URL参数
-                const newUrl = `${window.location.pathname}?id=${currentChannel}&q=${currentQuality}`;
-                window.history.replaceState(null, '', newUrl);
+                // 使用CORS代理来绕过跨域限制
+                const proxyUrl = 'https://api.allorigins.win/raw?url=';
+                const targetUrl = `https://cors-proxy.example.com/cctv-proxy?id=${currentChannel}&q=${currentQuality}`;
                 
-                // 使用代理API获取直播地址
-                status.textContent = '请求直播数据...';
-                
-                // 这里使用一个代理API来获取直播地址
-                // 在实际部署时，您可能需要设置自己的代理服务器
-                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://your-proxy-server.com/cctv-proxy?id=${currentChannel}&q=${currentQuality}`)}`;
-                
-                const response = await fetch(proxyUrl);
+                // 这里使用一个公开的CORS代理服务
+                const response = await fetch(proxyUrl + encodeURIComponent(targetUrl));
                 
                 if (!response.ok) {
                     throw new Error(`网络请求失败: ${response.status}`);
                 }
 
-                const data = await response.json();
+                const data = await response.text();
                 
-                if (!data.success) {
-                    throw new Error(data.error || '获取直播地址失败');
+                // 如果是M3U8链接，直接设置视频源
+                if (data.includes('.m3u8') || data.startsWith('http')) {
+                    status.textContent = '直播流获取成功！';
+                    status.className = 'status success';
+                    video.src = data;
+                    video.style.display = 'block';
+                    
+                    video.onloadeddata = function() {
+                        loading.style.display = 'none';
+                        video.play().catch(e => {
+                            status.textContent = '请手动点击播放按钮';
+                        });
+                    };
+
+                    video.onerror = function() {
+                        loading.style.display = 'none';
+                        status.textContent = '视频加载失败';
+                        status.className = 'status error';
+                    };
+                } else {
+                    // 如果是JSON数据，显示在输出区域
+                    try {
+                        const jsonData = JSON.parse(data);
+                        showJsonOutput(jsonData);
+                    } catch (e) {
+                        throw new Error('返回数据格式错误');
+                    }
                 }
 
-                // 播放视频
-                status.textContent = '准备播放...';
-                status.className = 'status success';
-                video.src = data.url;
-                video.style.display = 'block';
-                
-                video.onloadeddata = function() {
-                    loading.style.display = 'none';
-                    status.textContent = `正在播放: ${currentChannel.toUpperCase()} - ${getQualityText(currentQuality)}`;
-                    video.play().catch(e => {
-                        status.textContent = '自动播放被阻止，请手动点击播放';
-                    });
-                };
-
-                video.onerror = function() {
-                    loading.style.display = 'none';
-                    status.textContent = '视频加载失败，请重试';
-                    status.className = 'status error';
-                };
-
             } catch (error) {
-                console.error('播放错误:', error);
+                console.error('获取直播流错误:', error);
                 loading.style.display = 'none';
                 status.textContent = `错误: ${error.message}`;
                 status.className = 'status error';
                 
-                // 显示备用播放方案
-                showFallbackOptions();
+                // 显示备用方案
+                showFallbackStream();
             }
         }
 
-        function showFallbackOptions() {
+        async function getJsonData() {
+            const loading = document.getElementById('loading');
             const status = document.getElementById('status');
-            status.innerHTML += `<br><br>
-            <div style="margin-top: 10px;">
-                <p>如果无法播放，请尝试以下方法：</p>
-                <button onclick="useDirectStream()" style="margin: 5px; padding: 8px 15px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                    使用备用直播源
-                </button>
-                <button onclick="window.open('https://tv.cctv.com/live/${currentChannel}/')" style="margin: 5px; padding: 8px 15px; background: #2196F3; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                    前往CCTV官网观看
-                </button>
-            </div>`;
-        }
+            const jsonOutput = document.getElementById('jsonOutput');
+            
+            loading.style.display = 'block';
+            status.textContent = '正在获取JSON数据...';
+            status.className = 'status';
+            jsonOutput.style.display = 'none';
 
-        function useDirectStream() {
-            // 使用备用直播源
-            const video = document.getElementById('videoPlayer');
-            const status = document.getElementById('status');
-            
-            // 这里可以添加一些公开的CCTV直播源
-            const backupStreams = {
-                'cctv1': 'https://cctvcnch5.v.wscdns.com/live/cctv1_2/index.m3u8',
-                'cctv2': 'https://cctvcnch5.v.wscdns.com/live/cctv2_2/index.m3u8',
-                'cctv4': 'https://cctvcnch5.v.wscdns.com/live/cctv4_2/index.m3u8',
-                // 可以添加更多备用源
-            };
-            
-            if (backupStreams[currentChannel]) {
-                status.textContent = '正在使用备用直播源...';
-                video.src = backupStreams[currentChannel];
-                video.style.display = 'block';
-                video.play().catch(e => {
-                    status.textContent = '请手动点击播放按钮';
-                });
-            } else {
-                status.textContent = '该频道暂无备用直播源';
+            try {
+                // 模拟API响应
+                const mockData = {
+                    success: true,
+                    channel: currentChannel,
+                    quality: currentQuality,
+                    url: `https://example.com/live/${currentChannel}_${currentQuality}.m3u8`,
+                    timestamp: Date.now(),
+                    info: '这是一个模拟的API响应'
+                };
+                
+                showJsonOutput(mockData);
+                loading.style.display = 'none';
+                status.textContent = 'JSON数据获取成功！';
+                status.className = 'status success';
+                
+            } catch (error) {
+                loading.style.display = 'none';
+                status.textContent = `获取JSON数据失败: ${error.message}`;
                 status.className = 'status error';
             }
         }
 
-        function getQualityText(quality) {
-            const qualityMap = {
-                'lg': '蓝光 (1080P)',
-                'cq': '超清 (720P)', 
-                'gq': '高清 (540P)'
+        function showJsonOutput(data) {
+            const jsonOutput = document.getElementById('jsonOutput');
+            jsonOutput.textContent = JSON.stringify(data, null, 2);
+            jsonOutput.style.display = 'block';
+        }
+
+        function showFallbackStream() {
+            // 使用公开的备用直播源
+            const publicStreams = {
+                'cctv1': 'https://cctvcnch5.v.wscdns.com/live/cctv1_2/index.m3u8',
+                'cctv2': 'https://cctvcnch5.v.wscdns.com/live/cctv2_2/index.m3u8',
+                'cctv4': 'https://cctvcnch5.v.wscdns.com/live/cctv4_2/index.m3u8',
+                'cctv13': 'https://cctvcnch5.v.wscdns.com/live/cctv13/index.m3u8'
             };
-            return qualityMap[quality] || quality;
+            
+            const status = document.getElementById('status');
+            const video = document.getElementById('videoPlayer');
+            
+            if (publicStreams[currentChannel]) {
+                status.innerHTML = '使用备用直播源...';
+                video.src = publicStreams[currentChannel];
+                video.style.display = 'block';
+                video.play().catch(e => {
+                    status.textContent = '请手动点击播放按钮';
+                });
+            }
+        }
+
+        // 工具函数：生成UUID
+        function createUuid() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        // 工具函数：Base64编码
+        function base64Encode(str) {
+            return btoa(unescape(encodeURIComponent(str)));
+        }
+
+        // 工具函数：Base64解码
+        function base64Decode(str) {
+            return decodeURIComponent(escape(atob(str)));
         }
     </script>
 </body>
