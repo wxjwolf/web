@@ -1,1 +1,11 @@
-ddddd
+{"urls": [
+{"url": "https://v.muzid.eu.org/a.json","name": "自用"},
+{"url": "http://www.饭太硬.com/tv/","name": "饭太硬.真"},
+{"url": "https://cdn.jsdelivr.net/gh/loopool/fan/xo.json?1=1","name": "饭太硬1"},
+{"url": "https://cdn.jsdelivr.net/gh/nctoom/catvod/fty.json?1=1","name": "搜集合"},
+{"url": "https://cdn.jsdelivr.net/gh/qist/tvbox/0821.json?1=1","name": "饭太硬++"},
+{"url": "http://肥猫.com","name": "肥猫"},
+{"url": "http://box.ufuzi.com/tv/qq/短剧频道/api.json","name": "短剧"},
+{"url": "https://tv.菜妮丝.top","name": "菜妮丝"}
+]
+}
