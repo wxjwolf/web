@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CCTV直播API</title>
+    <title>CCTV直播流获取</title>
     <style>
         * {
             margin: 0;
@@ -13,14 +13,14 @@
         }
         
         body {
-            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            background: #1a1a1a;
             color: white;
             min-height: 100vh;
             padding: 20px;
         }
         
         .container {
-            max-width: 1200px;
+            max-width: 1000px;
             margin: 0 auto;
         }
         
@@ -28,63 +28,56 @@
             text-align: center;
             margin-bottom: 30px;
             padding: 20px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 15px;
         }
         
         h1 {
-            font-size: 2.5rem;
+            font-size: 2rem;
             margin-bottom: 10px;
+            color: #ff6b6b;
         }
         
-        .api-info {
-            background: rgba(255,255,255,0.1);
+        .control-panel {
+            background: #2d2d2d;
             border-radius: 10px;
             padding: 20px;
             margin-bottom: 20px;
         }
         
-        .api-url {
-            background: rgba(0,0,0,0.5);
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-            font-family: monospace;
-            word-break: break-all;
-        }
-        
-        .control-panel {
-            background: rgba(255,255,255,0.1);
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 30px;
-        }
-        
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         
         label {
             display: block;
             margin-bottom: 8px;
             font-weight: bold;
+            color: #ccc;
         }
         
         select, button {
             width: 100%;
-            padding: 12px 15px;
+            padding: 12px;
             border: none;
-            border-radius: 8px;
+            border-radius: 6px;
             font-size: 1rem;
-            background: rgba(255,255,255,0.9);
-            color: #333;
+            background: #444;
+            color: white;
             cursor: pointer;
         }
         
         button {
             background: #ff6b6b;
-            color: white;
             font-weight: bold;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            background: #ff5252;
+        }
+        
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
         }
         
         .quality-buttons {
@@ -96,8 +89,8 @@
         .quality-btn {
             flex: 1;
             padding: 10px;
-            background: rgba(255,255,255,0.2);
-            border: 1px solid rgba(255,255,255,0.3);
+            background: #444;
+            border: 2px solid #555;
             border-radius: 6px;
             color: white;
             cursor: pointer;
@@ -110,8 +103,8 @@
         }
         
         .video-container {
-            background: rgba(0,0,0,0.8);
-            border-radius: 15px;
+            background: #000;
+            border-radius: 10px;
             padding: 20px;
             margin-bottom: 20px;
             text-align: center;
@@ -120,23 +113,23 @@
         video {
             width: 100%;
             max-width: 800px;
-            border-radius: 10px;
+            border-radius: 8px;
         }
         
         .status {
-            text-align: center;
             padding: 15px;
             margin: 10px 0;
-            border-radius: 8px;
-            background: rgba(255,255,255,0.1);
+            border-radius: 6px;
+            background: #333;
+            text-align: center;
         }
         
         .error {
-            background: rgba(244, 67, 54, 0.8);
+            background: #d32f2f;
         }
         
         .success {
-            background: rgba(76, 175, 80, 0.8);
+            background: #388e3c;
         }
         
         .loading {
@@ -146,11 +139,11 @@
         }
         
         .spinner {
-            border: 4px solid rgba(255,255,255,0.3);
+            border: 3px solid #555;
             border-radius: 50%;
-            border-top: 4px solid white;
-            width: 40px;
-            height: 40px;
+            border-top: 3px solid #ff6b6b;
+            width: 30px;
+            height: 30px;
             animation: spin 1s linear infinite;
             margin: 0 auto 15px;
         }
@@ -160,21 +153,32 @@
             100% { transform: rotate(360deg); }
         }
         
+        .url-display {
+            background: #2d2d2d;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+        
         .channel-list {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 10px;
-            margin-top: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 8px;
+            margin-top: 15px;
         }
         
         .channel-btn {
-            padding: 12px;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 8px;
+            padding: 10px;
+            background: #444;
+            border: 1px solid #555;
+            border-radius: 6px;
             color: white;
             cursor: pointer;
             text-align: center;
+            font-size: 0.9rem;
         }
         
         .channel-btn.active {
@@ -182,31 +186,25 @@
             border-color: #2196F3;
         }
         
-        .json-output {
-            background: rgba(0,0,0,0.7);
-            border-radius: 8px;
+        .debug-info {
+            background: #2d2d2d;
             padding: 15px;
+            border-radius: 6px;
             margin-top: 20px;
             font-family: monospace;
-            white-space: pre-wrap;
-            word-break: break-all;
-            max-height: 300px;
+            font-size: 0.8rem;
+            max-height: 200px;
             overflow-y: auto;
+            display: none;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>📺 CCTV直播API</h1>
-            <p>静态页面调用CCTV直播流</p>
+            <h1>🔴 CCTV直播流获取</h1>
+            <p>基于央视新闻官方API的纯前端解决方案</p>
         </header>
-        
-        <div class="api-info">
-            <h3>API调用方式：</h3>
-            <div class="api-url" id="apiUrl">正在生成URL...</div>
-            <p>支持参数：id=频道ID, q=画质(lg/蓝光, cq/超清, gq/高清)</p>
-        </div>
         
         <div class="control-panel">
             <div class="form-group">
@@ -234,8 +232,8 @@
                 </div>
             </div>
             
-            <button id="playBtn">🎬 获取直播流</button>
-            <button id="jsonBtn" style="background: #2196F3; margin-top: 10px;">📋 获取JSON数据</button>
+            <button id="getStreamBtn">🚀 获取直播流</button>
+            <button id="debugBtn" style="background: #666; margin-top: 5px;">🐛 调试信息</button>
         </div>
         
         <div class="loading" id="loading">
@@ -243,16 +241,17 @@
             <p>正在获取直播流...</p>
         </div>
         
-        <div class="status" id="status">等待操作...</div>
+        <div class="status" id="status">等待操作</div>
+        
+        <div class="url-display" id="urlDisplay" style="display: none;">
+            <strong>直播流URL:</strong><br>
+            <span id="streamUrl"></span>
+        </div>
         
         <div class="video-container">
             <video id="videoPlayer" controls muted playsinline>
-                视频加载后将显示在这里
+                直播流将显示在这里
             </video>
-        </div>
-        
-        <div class="json-output" id="jsonOutput" style="display: none;">
-            {/* JSON数据将显示在这里 */}
         </div>
         
         <div class="channel-list">
@@ -267,6 +266,8 @@
             <div class="channel-btn" data-channel="cctv17">CCTV-17</div>
             <div class="channel-btn" data-channel="cctv4k">CCTV-4K</div>
         </div>
+        
+        <div class="debug-info" id="debugInfo"></div>
     </div>
 
     <script>
@@ -286,18 +287,16 @@
 
         let currentQuality = 'lg';
         let currentChannel = 'cctv1';
+        let debugMode = false;
 
         // 初始化
         document.addEventListener('DOMContentLoaded', function() {
-            updateApiUrl();
-            
             // 事件监听
             document.querySelectorAll('.quality-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     document.querySelectorAll('.quality-btn').forEach(b => b.classList.remove('active'));
                     this.classList.add('active');
                     currentQuality = this.dataset.quality;
-                    updateApiUrl();
                 });
             });
 
@@ -307,7 +306,6 @@
                     this.classList.add('active');
                     currentChannel = this.dataset.channel;
                     document.getElementById('channel').value = currentChannel;
-                    updateApiUrl();
                 });
             });
 
@@ -317,11 +315,10 @@
                     b.classList.remove('active');
                     if (b.dataset.channel === currentChannel) b.classList.add('active');
                 });
-                updateApiUrl();
             });
 
-            document.getElementById('playBtn').addEventListener('click', getLiveStream);
-            document.getElementById('jsonBtn').addEventListener('click', getJsonData);
+            document.getElementById('getStreamBtn').addEventListener('click', getLiveStream);
+            document.getElementById('debugBtn').addEventListener('click', toggleDebug);
             
             // 检查URL参数
             const urlParams = new URLSearchParams(window.location.search);
@@ -345,163 +342,202 @@
                 });
             }
             
-            updateApiUrl();
-            
             // 如果有URL参数，自动获取
             if (urlId || urlQ) {
-                setTimeout(getLiveStream, 1000);
+                setTimeout(getLiveStream, 500);
             }
         });
-
-        function updateApiUrl() {
-            const apiUrl = `${window.location.origin}${window.location.pathname}?id=${currentChannel}&q=${currentQuality}`;
-            document.getElementById('apiUrl').textContent = apiUrl;
-        }
 
         async function getLiveStream() {
             const loading = document.getElementById('loading');
             const status = document.getElementById('status');
             const video = document.getElementById('videoPlayer');
-            const jsonOutput = document.getElementById('jsonOutput');
+            const urlDisplay = document.getElementById('urlDisplay');
+            const getStreamBtn = document.getElementById('getStreamBtn');
             
             loading.style.display = 'block';
             status.textContent = '正在获取直播流...';
             status.className = 'status';
             video.style.display = 'none';
-            jsonOutput.style.display = 'none';
+            urlDisplay.style.display = 'none';
+            getStreamBtn.disabled = true;
 
             try {
-                // 使用CORS代理来绕过跨域限制
-                const proxyUrl = 'https://api.allorigins.win/raw?url=';
-                const targetUrl = `https://cors-proxy.example.com/cctv-proxy?id=${currentChannel}&q=${currentQuality}`;
+                const articleId = channelMap[currentChannel];
+                if (!articleId) {
+                    throw new Error('不支持的频道');
+                }
+
+                const t = Math.floor(Date.now() / 1000);
                 
-                // 这里使用一个公开的CORS代理服务
-                const response = await fetch(proxyUrl + encodeURIComponent(targetUrl));
+                // 生成签名
+                const sail = await sha256(`articleId=${articleId}&scene_type=6`);
+                const w = `&&&20000009&${sail}&${t}&emas.feed.article.live.detail&1.0.0&&&&&`;
+                const k = "emasgatewayh5";
+                const sign = await hmacSHA256(w, k);
+                
+                // 构建请求头
+                const clientId = await sha256(t.toString());
+                const headers = {
+                    'cookieuid': clientId,
+                    'from-client': 'h5',
+                    'referer': 'https://m-live.cctvnews.cctv.com/',
+                    'x-emas-gw-appkey': '20000009',
+                    'x-emas-gw-pv': '6.1',
+                    'x-emas-gw-sign': sign,
+                    'x-emas-gw-t': t.toString(),
+                    'x-req-ts': (t * 1000).toString(),
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                };
+
+                status.textContent = '请求API数据...';
+                addDebugInfo(`请求URL: https://emas-api.cctvnews.cctv.com/h5/emas.feed.article.live.detail/1.0.0?articleId=${articleId}&scene_type=6`);
+
+                // 获取直播数据
+                const apiUrl = `https://emas-api.cctvnews.cctv.com/h5/emas.feed.article.live.detail/1.0.0?articleId=${articleId}&scene_type=6`;
+                const response = await fetch(apiUrl, { headers });
                 
                 if (!response.ok) {
-                    throw new Error(`网络请求失败: ${response.status}`);
+                    throw new Error(`API请求失败: ${response.status}`);
                 }
 
-                const data = await response.text();
+                const data = await response.json();
+                addDebugInfo(`API响应: ${JSON.stringify(data).substring(0, 500)}...`);
+
+                // 解码响应数据
+                const decodedResponse = atob(data.response);
+                const responseData = JSON.parse(decodedResponse);
+                const liveData = responseData.data;
+
+                // 获取对应画质的URL
+                let authUrl;
+                const authResult = liveData.live_room.liveCameraList[0].pullUrlList[0].authResultUrl[0];
                 
-                // 如果是M3U8链接，直接设置视频源
-                if (data.includes('.m3u8') || data.startsWith('http')) {
-                    status.textContent = '直播流获取成功！';
-                    status.className = 'status success';
-                    video.src = data;
-                    video.style.display = 'block';
-                    
-                    video.onloadeddata = function() {
-                        loading.style.display = 'none';
-                        video.play().catch(e => {
-                            status.textContent = '请手动点击播放按钮';
-                        });
-                    };
-
-                    video.onerror = function() {
-                        loading.style.display = 'none';
-                        status.textContent = '视频加载失败';
-                        status.className = 'status error';
-                    };
+                if (currentQuality === 'lg') {
+                    authUrl = authResult.authUrl;
+                } else if (currentQuality === 'cq') {
+                    authUrl = authResult.demote_urls[1].authUrl;
+                } else if (currentQuality === 'gq') {
+                    authUrl = authResult.demote_urls[0].authUrl;
                 } else {
-                    // 如果是JSON数据，显示在输出区域
-                    try {
-                        const jsonData = JSON.parse(data);
-                        showJsonOutput(jsonData);
-                    } catch (e) {
-                        throw new Error('返回数据格式错误');
-                    }
+                    throw new Error('不支持的画质参数');
                 }
+
+                addDebugInfo(`加密URL: ${authUrl.substring(0, 100)}...`);
+
+                // 解密URL
+                const dk = liveData.dk;
+                const key = dk.substring(0, 8) + t.toString().slice(-8);
+                const iv = dk.substring(dk.length - 8) + t.toString().substring(0, 8);
+                
+                status.textContent = '解密直播地址...';
+                const liveUrl = await decryptAES(authUrl, key, iv);
+
+                addDebugInfo(`解密后的URL: ${liveUrl}`);
+
+                // 显示URL并播放视频
+                document.getElementById('streamUrl').textContent = liveUrl;
+                urlDisplay.style.display = 'block';
+                
+                status.textContent = '准备播放...';
+                status.className = 'status success';
+                video.src = liveUrl;
+                video.style.display = 'block';
+                
+                video.onloadeddata = function() {
+                    loading.style.display = 'none';
+                    status.textContent = `正在播放: ${currentChannel.toUpperCase()} - ${getQualityText(currentQuality)}`;
+                    video.play().catch(e => {
+                        status.textContent = '自动播放被阻止，请手动点击播放';
+                    });
+                };
+
+                video.onerror = function() {
+                    loading.style.display = 'none';
+                    status.textContent = '视频加载失败，请检查URL或网络连接';
+                    status.className = 'status error';
+                };
 
             } catch (error) {
                 console.error('获取直播流错误:', error);
                 loading.style.display = 'none';
                 status.textContent = `错误: ${error.message}`;
                 status.className = 'status error';
-                
-                // 显示备用方案
-                showFallbackStream();
+                addDebugInfo(`错误: ${error.message}`);
+            } finally {
+                getStreamBtn.disabled = false;
             }
         }
 
-        async function getJsonData() {
-            const loading = document.getElementById('loading');
-            const status = document.getElementById('status');
-            const jsonOutput = document.getElementById('jsonOutput');
-            
-            loading.style.display = 'block';
-            status.textContent = '正在获取JSON数据...';
-            status.className = 'status';
-            jsonOutput.style.display = 'none';
+        // 加密工具函数
+        async function sha256(str) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(str);
+            const hash = await crypto.subtle.digest('SHA-256', data);
+            return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
 
+        async function hmacSHA256(message, key) {
+            const encoder = new TextEncoder();
+            const keyData = encoder.encode(key);
+            const messageData = encoder.encode(message);
+            
+            const cryptoKey = await crypto.subtle.importKey(
+                'raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+            );
+            
+            const signature = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
+            return Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function decryptAES(encryptedData, key, iv) {
             try {
-                // 模拟API响应
-                const mockData = {
-                    success: true,
-                    channel: currentChannel,
-                    quality: currentQuality,
-                    url: `https://example.com/live/${currentChannel}_${currentQuality}.m3u8`,
-                    timestamp: Date.now(),
-                    info: '这是一个模拟的API响应'
-                };
+                // Base64解码
+                const encryptedBytes = Uint8Array.from(atob(encryptedData), c => c.charCodeAt(0));
+                const keyBytes = new TextEncoder().encode(key);
+                const ivBytes = new TextEncoder().encode(iv);
                 
-                showJsonOutput(mockData);
-                loading.style.display = 'none';
-                status.textContent = 'JSON数据获取成功！';
-                status.className = 'status success';
+                // 导入密钥
+                const cryptoKey = await crypto.subtle.importKey(
+                    'raw', keyBytes, { name: 'AES-CBC' }, false, ['decrypt']
+                );
                 
+                // 解密
+                const decrypted = await crypto.subtle.decrypt(
+                    { name: 'AES-CBC', iv: ivBytes },
+                    cryptoKey,
+                    encryptedBytes
+                );
+                
+                return new TextDecoder().decode(decrypted);
             } catch (error) {
-                loading.style.display = 'none';
-                status.textContent = `获取JSON数据失败: ${error.message}`;
-                status.className = 'status error';
+                throw new Error('AES解密失败: ' + error.message);
             }
         }
 
-        function showJsonOutput(data) {
-            const jsonOutput = document.getElementById('jsonOutput');
-            jsonOutput.textContent = JSON.stringify(data, null, 2);
-            jsonOutput.style.display = 'block';
-        }
-
-        function showFallbackStream() {
-            // 使用公开的备用直播源
-            const publicStreams = {
-                'cctv1': 'https://cctvcnch5.v.wscdns.com/live/cctv1_2/index.m3u8',
-                'cctv2': 'https://cctvcnch5.v.wscdns.com/live/cctv2_2/index.m3u8',
-                'cctv4': 'https://cctvcnch5.v.wscdns.com/live/cctv4_2/index.m3u8',
-                'cctv13': 'https://cctvcnch5.v.wscdns.com/live/cctv13/index.m3u8'
+        function getQualityText(quality) {
+            const qualityMap = {
+                'lg': '蓝光',
+                'cq': '超清', 
+                'gq': '高清'
             };
-            
-            const status = document.getElementById('status');
-            const video = document.getElementById('videoPlayer');
-            
-            if (publicStreams[currentChannel]) {
-                status.innerHTML = '使用备用直播源...';
-                video.src = publicStreams[currentChannel];
-                video.style.display = 'block';
-                video.play().catch(e => {
-                    status.textContent = '请手动点击播放按钮';
-                });
+            return qualityMap[quality] || quality;
+        }
+
+        function toggleDebug() {
+            const debugInfo = document.getElementById('debugInfo');
+            debugMode = !debugMode;
+            debugInfo.style.display = debugMode ? 'block' : 'none';
+            document.getElementById('debugBtn').textContent = debugMode ? '🐛 隐藏调试' : '🐛 调试信息';
+        }
+
+        function addDebugInfo(message) {
+            if (debugMode) {
+                const debugInfo = document.getElementById('debugInfo');
+                const timestamp = new Date().toLocaleTimeString();
+                debugInfo.innerHTML += `[${timestamp}] ${message}<br>`;
+                debugInfo.scrollTop = debugInfo.scrollHeight;
             }
-        }
-
-        // 工具函数：生成UUID
-        function createUuid() {
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                const r = Math.random() * 16 | 0;
-                const v = c == 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            });
-        }
-
-        // 工具函数：Base64编码
-        function base64Encode(str) {
-            return btoa(unescape(encodeURIComponent(str)));
-        }
-
-        // 工具函数：Base64解码
-        function base64Decode(str) {
-            return decodeURIComponent(escape(atob(str)));
         }
     </script>
 </body>
