@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>CCTV API</title>
+    <script>
+        // 频道映射
+        const channelMap = {
+            'cctv1': '11200132825562653886',
+            'cctv2': '12030532124776958103',
+            'cctv4': '10620168294224708952', 
+            'cctv7': '8516529981177953694',
+            'cctv9': '7252237247689203957',
+            'cctv10': '14589146016461298119',
+            'cctv12': '13180385922471124325',
+            'cctv13': '16265686808730585228',
+            'cctv17': '4496917190172866934',
+            'cctv4k': '2127841942201075403'
+        };
+
+        async function handleRequest() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get('id') || 'cctv1';
+            const q = urlParams.get('q') || 'lg';
+            const format = urlParams.get('format') || 'redirect';
+
+            try {
+                const articleId = channelMap[id];
+                if (!articleId) {
+                    throw new Error('频道不存在');
+                }
+
+                const t = Math.floor(Date.now() / 1000);
+                const sail = await md5(`articleId=${articleId}&scene_type=6`);
+                const w = `&&&20000009&${sail}&${t}&emas.feed.article.live.detail&1.0.0&&&&&`;
+                const k = "emasgatewayh5";
+                const sign = await hmacSHA256(w, k);
+                const clientId = await md5(t.toString());
+
+                const headers = {
+                    'cookieuid': clientId,
+                    'from-client': 'h5',
+                    'referer': 'https://m-live.cctvnews.cctv.com/',
+                    'x-emas-gw-appkey': '20000009',
+                    'x-emas-gw-pv': '6.1',
+                    'x-emas-gw-sign': sign,
+                    'x-emas-gw-t': t.toString(),
+                    'x-req-ts': (t * 1000).toString()
+                };
+
+                const apiUrl = `https://emas-api.cctvnews.cctv.com/h5/emas.feed.article.live.detail/1.0.0?articleId=${articleId}&scene_type=6`;
+                const response = await fetch(apiUrl, { headers });
+                
+                if (!response.ok) throw new Error('API请求失败');
+                
+                const data = await response.json();
+                const decodedData = JSON.parse(atob(data.response)).data;
+
+                let authUrl;
+                const liveData = decodedData.live_room.liveCameraList[0].pullUrlList[0].authResultUrl[0];
+                
+                if (q === 'lg') authUrl = liveData.authUrl;
+                else if (q === 'cq') authUrl = liveData.demote_urls[1].authUrl;
+                else if (q === 'gq') authUrl = liveData.demote_urls[0].authUrl;
+                else throw new Error('画质参数错误');
+
+                const dk = decodedData.dk;
+                const key = dk.substring(0, 8) + t.toString().slice(-8);
+                const iv = dk.substring(dk.length - 8) + t.toString().substring(0, 8);
+                
+                const liveUrl = await decryptAES(authUrl, key, iv);
+
+                if (format === 'json') {
+                    document.body.innerHTML = JSON.stringify({
+                        success: true,
+                        channel: id,
+                        quality: q,
+                        url: liveUrl
+                    }, null, 2);
+                } else {
+                    window.location.href = liveUrl;
+                }
+
+            } catch (error) {
+                document.body.innerHTML = JSON.stringify({
+                    success: false,
+                    error: error.message
+                }, null, 2);
+            }
+        }
+
+        // 工具函数
+        async function md5(str) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(str);
+            const hash = await crypto.subtle.digest('MD5', data);
+            return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function hmacSHA256(message, key) {
+            const encoder = new TextEncoder();
+            const keyData = encoder.encode(key);
+            const messageData = encoder.encode(message);
+            const cryptoKey = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+            const signature = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
+            return Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function decryptAES(encryptedData, key, iv) {
+            const encryptedBytes = Uint8Array.from(atob(encryptedData), c => c.charCodeAt(0));
+            const keyBytes = new TextEncoder().encode(key);
+            const ivBytes = new TextEncoder().encode(iv);
+            const cryptoKey = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-CBC' }, false, ['decrypt']);
+            const decrypted = await crypto.subtle.decrypt({ name: 'AES-CBC', iv: ivBytes }, cryptoKey, encryptedBytes);
+            return new TextDecoder().decode(decrypted);
+        }
+
+        // 页面加载时处理请求
+        window.addEventListener('DOMContentLoaded', handleRequest);
+    </script>
+</head>
+<body>
+    <p>处理中...</p>
+</body>
+</html>
